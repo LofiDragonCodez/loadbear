@@ -56,12 +56,14 @@ export default function Home() {
   const [categoryError, setCategoryError] = useState("");
   const [undoEntry, setUndoEntry] = useState<{ message: string; tasks: Task[] } | null>(null);
   const today = useSyncExternalStore(subscribeToLocalDay, getTodaySnapshot, () => "");
-  const weekEnd = useMemo(() => {
-    if (!today) return "";
+  const { weekStartDate, weekEnd } = useMemo(() => {
+    if (!today) return { weekStartDate: "", weekEnd: "" };
     const date = new Date(`${today}T12:00:00`);
     const offset = (date.getDay() - state.data.settings.weekStart + 7) % 7;
-    date.setDate(date.getDate() + (6 - offset));
-    return localDate(date);
+    date.setDate(date.getDate() - offset);
+    const start = localDate(date);
+    date.setDate(date.getDate() + 6);
+    return { weekStartDate: start, weekEnd: localDate(date) };
   }, [state.data.settings.weekStart, today]);
 
   const activeTasks = state.data.tasks.filter((task) => !task.done);
@@ -75,7 +77,7 @@ export default function Home() {
     .filter((task) => task.dueDate !== null && task.dueDate > today && task.dueDate <= weekEnd)
     .sort(taskOrder);
   const thisWeekAssignmentCount = activeTasks.filter(
-    (task) => task.dueDate !== null && task.dueDate >= today && task.dueDate <= weekEnd,
+    (task) => task.dueDate !== null && task.dueDate >= weekStartDate && task.dueDate <= weekEnd,
   ).length;
   const laterTasks = visibleTasks
     .filter((task) => task.dueDate === null || task.dueDate > weekEnd)
@@ -354,7 +356,7 @@ export default function Home() {
         </div>
         <div className="week-placeholder">
           {Array.from({ length: 7 }, (_, index) => {
-            const dayDate = addDays(new Date(`${today}T12:00:00`), index);
+            const dayDate = addDays(new Date(`${weekStartDate}T12:00:00`), index);
             const day = new Intl.DateTimeFormat("en", { weekday: "short" })
               .format(new Date(`${dayDate}T12:00:00`))
               .toUpperCase();
@@ -370,6 +372,9 @@ export default function Home() {
                   : "overloaded";
             return (
               <div className={`week-day load-${loadLevel} ${dayDate === today ? "today-day" : ""}`} key={dayDate}>
+                <time dateTime={dayDate} className="week-date">
+                  {`${dayDate.slice(5, 7)}/${dayDate.slice(8, 10)}`}
+                </time>
                 <div
                   className="week-dots"
                   style={{ "--dot-spacing": `${dotSpacing}px` } as CSSProperties}

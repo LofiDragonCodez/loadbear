@@ -369,6 +369,14 @@ button {
   color: #111;
 }
 
+.week-date {
+  color: #696969;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .week-dots {
   width: 100%;
   max-width: 53px;
